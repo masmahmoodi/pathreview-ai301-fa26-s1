@@ -15,9 +15,11 @@ class TestHealthRoute:
         mock_redis_instance = MagicMock()
         mock_redis_instance.ping.return_value = True
 
-        with patch("redis.Redis.from_url", return_value=mock_redis_instance) as mock_from_url, \
-             patch("api.routes.health.get_db"), \
-             patch("core.config.settings") as mock_settings:
+        with (
+            patch("redis.Redis.from_url", return_value=mock_redis_instance) as mock_from_url,
+            patch("api.routes.health.get_db"),
+            patch("core.config.settings") as mock_settings,
+        ):
 
             mock_settings.redis_url = "redis://localhost:6379/0"
             mock_settings.vector_db_url = "http://localhost:8001"
@@ -32,9 +34,7 @@ class TestHealthRoute:
             await health_check(db=mock_db)
 
             # The fix: from_url must have been called with settings.redis_url
-            mock_from_url.assert_called_once_with(
-                mock_settings.redis_url, decode_responses=True
-            )
+            mock_from_url.assert_called_once_with(mock_settings.redis_url, decode_responses=True)
             mock_redis_instance.ping.assert_called_once()
 
     @pytest.mark.asyncio
@@ -42,12 +42,10 @@ class TestHealthRoute:
         """Settings must not have redis_host; accessing it raised the original bug."""
         from core.config import settings
 
-        assert not hasattr(settings, "redis_host"), (
-            "settings.redis_host exists — the fix may be incomplete or Settings changed"
-        )
-        assert not hasattr(settings, "redis_port"), (
-            "settings.redis_port exists — the fix may be incomplete or Settings changed"
-        )
-        assert hasattr(settings, "redis_url"), (
-            "settings.redis_url must exist for the probe to use"
-        )
+        assert not hasattr(
+            settings, "redis_host"
+        ), "settings.redis_host exists — the fix may be incomplete or Settings changed"
+        assert not hasattr(
+            settings, "redis_port"
+        ), "settings.redis_port exists — the fix may be incomplete or Settings changed"
+        assert hasattr(settings, "redis_url"), "settings.redis_url must exist for the probe to use"
